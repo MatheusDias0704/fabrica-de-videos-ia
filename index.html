@@ -1,0 +1,801 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fábrica de Vídeos IA e Máquina de Cortes IA · duas máquinas no seu computador</title>
+  <meta name="description" content="Duas máquinas de IA que rodam no seu computador: a Fábrica faz vídeos animados do zero a partir de uma frase e a Máquina de Cortes corta lives sozinha. Você só aprova. R$77 as duas.">
+  <meta property="og:title" content="Fábrica de Vídeos IA e Máquina de Cortes IA">
+  <meta property="og:description" content="Você escreve a ideia, a Fábrica entrega o vídeo pronto. A Máquina vigia as lives e entrega os cortes. Você só aprova.">
+  <meta property="og:image" content="media/caim-abel.jpg">
+  <meta name="theme-color" content="#0b0d14">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b0d14'/><circle cx='16' cy='16' r='6' fill='%23ff5a3c'/></svg>">
+  <link rel="preload" href="fonts/BigShouldersDisplay-700.woff2" as="font" type="font/woff2" crossorigin>
+  <style>
+    /* Direção
+       Produto: duas máquinas de IA que rodam no computador do comprador; uma faz vídeo animado do zero, a outra corta lives sozinha.
+       Caráter: ao vivo, exato, de chão de fábrica.
+       Mundo: sala de controle de transmissão (monitores, timecode, luz de "no ar") + linha de produção com estações.
+       Momentos: (1) o painel real no hero levando uma pauta pelas 8 estações até o vídeo pronto; (2) o monitor fixo da Máquina de Cortes acompanhando os passos.
+       Assinatura: a luz de estação (quadradinho vermelho = trabalhando) e o timecode em mono. */
+    @font-face{font-family:'Big Shoulders Display';font-weight:500;font-display:swap;src:url(fonts/BigShouldersDisplay-500.woff2) format('woff2')}
+    @font-face{font-family:'Big Shoulders Display';font-weight:700;font-display:swap;src:url(fonts/BigShouldersDisplay-700.woff2) format('woff2')}
+    @font-face{font-family:'Hanken Grotesk';font-weight:400;font-display:swap;src:url(fonts/HankenGrotesk-400.woff2) format('woff2')}
+    @font-face{font-family:'Hanken Grotesk';font-weight:500;font-display:swap;src:url(fonts/HankenGrotesk-500.woff2) format('woff2')}
+    @font-face{font-family:'Hanken Grotesk';font-weight:600;font-display:swap;src:url(fonts/HankenGrotesk-600.woff2) format('woff2')}
+    @font-face{font-family:'JetBrains Mono';font-weight:400;font-display:swap;src:url(fonts/JetBrainsMono-400.woff2) format('woff2')}
+    @font-face{font-family:'JetBrains Mono';font-weight:500;font-display:swap;src:url(fonts/JetBrainsMono-500.woff2) format('woff2')}
+
+    :root {
+      --font-ui: "Hanken Grotesk", system-ui, sans-serif;
+      --font-display: "Big Shoulders Display", "Hanken Grotesk", sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+      --deep: #07080d; --bg: #0b0d14; --surface: #11141c; --raised: #1a1e28;
+      --text: #eef0f5; --text-2: #a3a9b8; --muted: #7a8296;
+      --line: color-mix(in oklch, var(--text) 9%, transparent);
+      --line-2: color-mix(in oklch, var(--text) 16%, transparent);
+      --accent: #ff5a3c; --on-accent: #1a0702;
+      --ok: #4cc38a; --bad: #e5484d;
+
+      --paper: #f3f4f7; --paper-card: #ffffff; --ink: #111827; --ink-2: #4b5565; --ink-line: rgb(17 24 39 / .1);
+
+      --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px; --s5: 20px; --s6: 24px;
+      --s8: 32px; --s10: 40px; --s12: 48px; --s16: 64px; --s20: 80px; --s24: 96px; --s32: 128px;
+      --wrap: 1240px; --gutter: clamp(16px, 4vw, 32px);
+      --r-sm: 6px; --r-md: 10px; --r-lg: 16px; --r-xl: 20px;
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+      --dur-fast: 150ms; --dur-base: 220ms; --dur-enter: 450ms; --stagger: 50ms;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; scrollbar-color: var(--muted) var(--bg); caret-color: var(--accent); scroll-behavior: smooth; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 400 17px/1.6 var(--font-ui); -webkit-font-smoothing: antialiased; overflow-x: clip; }
+    img, video, svg { display: block; max-width: 100%; }
+    h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1; margin: 0; text-wrap: balance; letter-spacing: -0.01em; }
+    h3 { font-family: var(--font-ui); font-weight: 600; font-size: 19px; line-height: 1.3; letter-spacing: 0; }
+    p { margin: 0; text-wrap: pretty; max-width: 62ch; }
+    a { color: inherit; text-underline-offset: .22em; text-decoration-thickness: 1px; }
+    ul, ol { margin: 0; padding: 0; list-style: none; }
+    .num, .mono { font-variant-numeric: tabular-nums; }
+    .mono { font-family: var(--font-mono); font-size: 13px; letter-spacing: 0; }
+    ::selection { background: color-mix(in oklch, var(--accent) 35%, transparent); color: var(--text); }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+    .skip { position: absolute; left: var(--s4); top: -60px; z-index: 100; padding: var(--s3) var(--s4); background: var(--text); color: var(--bg); border-radius: var(--r-md); }
+    .skip:focus-visible { top: var(--s4); }
+    .wrap { width: min(100% - 2 * var(--gutter), var(--wrap)); margin-inline: auto; }
+
+    /* luz de estação: a assinatura */
+    .lamp { display: inline-block; width: 8px; height: 8px; border-radius: 2px; background: var(--line-2); flex: none; transition: background-color var(--dur-base) var(--ease); }
+    .lamp.on { background: var(--accent); }
+    .lamp.ok { background: var(--ok); }
+    .lamp.bad { background: var(--bad); }
+
+    /* nav */
+    .nav { position: sticky; top: 0; z-index: 50; background: color-mix(in oklch, var(--bg) 86%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .nav .wrap { display: flex; align-items: center; gap: var(--s8); height: 64px; }
+    .logo { display: inline-flex; align-items: center; gap: var(--s2); font: 600 17px/1 var(--font-ui); text-decoration: none; margin-right: auto; }
+    .nav ul { display: flex; gap: var(--s6); }
+    .nav ul a { text-decoration: none; color: var(--text-2); font-size: 15px; transition: color var(--dur-fast) var(--ease); }
+    .nav ul a:hover { color: var(--text); }
+    .menu-btn { display: none; }
+
+    /* botões */
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); min-height: 48px; padding: 0 var(--s5); border-radius: var(--r-md); font: 600 16px/1 var(--font-ui); text-decoration: none; border: 1px solid transparent; cursor: pointer;
+      transition: background-color var(--dur-fast) var(--ease), border-color var(--dur-fast) var(--ease), transform var(--dur-fast) var(--ease); }
+    .btn:active { transform: scale(.98); }
+    .btn-primary { background: var(--accent); color: var(--on-accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 86%, white); }
+    .btn-secondary { background: transparent; color: var(--text); border-color: var(--line-2); }
+    .btn-secondary:hover { background: var(--raised); }
+    .nav .btn { min-height: 38px; padding: 0 var(--s4); font-size: 15px; }
+    .btn-ink { background: var(--ink); color: var(--paper); }
+    .btn-ink:hover { background: #283141; }
+    .btn-line-ink { color: var(--ink); border-color: rgb(17 24 39 / .22); }
+    .btn-line-ink:hover { background: rgb(17 24 39 / .05); }
+
+    /* hero */
+    .hero { min-height: calc(100svh - 64px); display: grid; align-items: center; padding-block: var(--s12) var(--s16); }
+    .hero .wrap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr); gap: clamp(var(--s8), 5vw, var(--s20)); align-items: center; }
+    .hero h1 { font-size: clamp(52px, 7vw, 100px); max-width: 11ch; }
+    .hero .sub { margin-top: var(--s6); font-size: clamp(18px, 1.5vw, 20px); color: var(--text-2); max-width: 34rem; }
+    .hero .actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s8); }
+    .fact { margin-top: var(--s5); color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s5); }
+    .fact b { color: var(--text); font-weight: 600; }
+
+    /* o painel do hero (momento 1) */
+    .console { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl); box-shadow: 0 24px 60px rgb(0 0 0 / .45); overflow: hidden; }
+    .console-bar { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); color: var(--muted); }
+    .console-bar .title { color: var(--text-2); font-size: 13px; font-weight: 500; margin-right: auto; }
+    .console-body { display: grid; grid-template-columns: minmax(0, 1fr) 210px; gap: var(--s5); padding: var(--s5); }
+    .pauta { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--s3); background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-md); padding: var(--s3) var(--s4); min-height: 48px; }
+    .pauta .label { color: var(--muted); font-size: 13px; flex: none; }
+    .pauta .typed { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .pauta .typed::after { content: ""; display: inline-block; width: 2px; height: 1.05em; background: var(--accent); vertical-align: -0.15em; margin-left: 2px; opacity: var(--caret, 1); }
+    .stations { display: grid; gap: 2px; align-content: start; }
+    .st { display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; align-items: center; gap: var(--s3); min-height: 36px; padding: 0 var(--s3); border-radius: var(--r-sm); font-size: 14px; color: var(--muted); transition: background-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease); }
+    .st.run { background: var(--raised); color: var(--text); }
+    .st.done { color: var(--text-2); }
+    .st .who { font-size: 12px; color: var(--muted); }
+    .st.judge { margin-left: var(--s5); }
+    .st .note { grid-column: 2 / -1; font-size: 12.5px; color: var(--bad); line-height: 1.35; padding-bottom: 6px; display: none; }
+    .st.flag .note { display: block; }
+    .phone { position: relative; aspect-ratio: 9 / 16; border-radius: 22px; overflow: hidden; background: var(--deep); border: 1px solid var(--line-2); align-self: start; }
+    .phone video, .phone img { width: 100%; height: 100%; object-fit: cover; }
+    .phone .veil { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: var(--s4); background: color-mix(in oklch, var(--deep) 92%, transparent); color: var(--muted); font-size: 13px; transition: opacity var(--dur-enter) var(--ease); }
+    .phone.ready .veil { opacity: 0; pointer-events: none; }
+    .phone .tc { position: absolute; left: var(--s3); top: var(--s3); display: flex; gap: 6px; align-items: center; padding: 3px 7px; border-radius: 4px; background: rgb(7 8 13 / .7); color: var(--text-2); font-size: 11px; }
+    .phone .vctl { position: absolute; right: var(--s2); bottom: var(--s2); display: flex; gap: 6px; }
+    .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; border: 1px solid var(--line-2); background: rgb(7 8 13 / .72); color: var(--text); cursor: pointer; transition: background-color var(--dur-fast) var(--ease); }
+    .icon-btn:hover { background: var(--raised); }
+    .icon-btn svg { width: 16px; height: 16px; }
+    .approve { grid-column: 1 / -1; display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; border-top: 1px solid var(--line); padding-top: var(--s4); }
+    .approve .state { margin-right: auto; font-size: 14px; color: var(--text-2); display: flex; align-items: center; gap: var(--s2); }
+    .approve .btn { min-height: 40px; font-size: 14px; padding: 0 var(--s4); }
+    .approve .btn[disabled] { opacity: .45; cursor: not-allowed; }
+    .rerun { background: none; border: 0; color: var(--muted); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: .2em; padding: var(--s2); }
+    .rerun:hover { color: var(--text); }
+
+    /* seções */
+    main > section { padding-block: clamp(var(--s20), 10vw, var(--s32)); }
+    .h2 { font-size: clamp(40px, 5.2vw, 72px); max-width: 16ch; }
+    .lead { margin-top: var(--s5); font-size: clamp(18px, 1.4vw, 20px); color: var(--text-2); max-width: 40rem; }
+    .price-tag { display: inline-flex; align-items: baseline; gap: var(--s2); margin-top: var(--s6); color: var(--text-2); font-size: 15px; }
+    .price-tag b { font: 700 32px/1 var(--font-display); color: var(--text); }
+
+    /* Fábrica */
+    .fab .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(var(--s10), 6vw, var(--s24)); align-items: center; margin-top: var(--s16); }
+    .reels { display: grid; grid-template-columns: 1.1fr .9fr; gap: var(--s5); align-items: end; }
+    .reels figure { margin: 0; }
+    .reels figcaption { margin-top: var(--s3); font-size: 13px; color: var(--muted); }
+    .reels .phone { border-radius: 20px; }
+    .steps { display: grid; gap: var(--s8); counter-reset: s; }
+    .steps li { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: var(--s4); }
+    .steps li::before { counter-increment: s; content: counter(s); font: 500 13px/32px var(--font-mono); width: 32px; height: 32px; text-align: center; border: 1px solid var(--line-2); border-radius: var(--r-sm); color: var(--text-2); }
+    .steps p { color: var(--text-2); margin-top: var(--s2); }
+    .judge-box { margin-top: var(--s10); padding: var(--s6); border-radius: var(--r-lg); background: var(--surface); border: 1px solid var(--line); }
+    .judge-box p { color: var(--text-2); margin-top: var(--s2); }
+    .judge-log { margin-top: var(--s4); display: grid; gap: var(--s2); }
+    .judge-log li { display: flex; gap: var(--s3); align-items: baseline; font-size: 14px; color: var(--text-2); }
+    .judge-log .lamp { transform: translateY(-1px); }
+
+    /* Máquina de Cortes (momento 2: monitor fixo) */
+    .cortes { background: var(--deep); border-block: 1px solid var(--line); }
+    .cortes .grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: clamp(var(--s10), 6vw, var(--s24)); margin-top: var(--s16); }
+    .monitor-wrap { position: sticky; top: 96px; align-self: start; }
+    .monitor { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-xl); overflow: hidden; }
+    .monitor-bar { display: flex; align-items: center; gap: var(--s3); padding: var(--s3) var(--s4); border-bottom: 1px solid var(--line); }
+    .tabs { display: flex; gap: 2px; margin-right: auto; overflow-x: auto; }
+    .tabs span { padding: 6px 10px; border-radius: var(--r-sm); font-size: 13px; color: var(--muted); white-space: nowrap; transition: background-color var(--dur-base) var(--ease), color var(--dur-base) var(--ease); }
+    .tabs span.on { background: var(--raised); color: var(--text); }
+    .screen { position: relative; min-height: 400px; }
+    .pane { position: absolute; inset: 0; padding: var(--s5); opacity: 0; transform: translateY(6px); transition: opacity var(--dur-enter) var(--ease), transform var(--dur-enter) var(--ease); pointer-events: none; }
+    .pane.on { opacity: 1; transform: none; pointer-events: auto; }
+    .radar li { display: grid; grid-template-columns: minmax(0, 1fr) 64px 120px; gap: var(--s3); align-items: center; min-height: 52px; border-bottom: 1px solid var(--line); font-size: 14px; }
+    .radar li:last-child { border-bottom: 0; }
+    .radar .who { display: grid; }
+    .radar .who small { color: var(--muted); font-size: 12px; }
+    .radar .score { font: 500 15px/1 var(--font-mono); text-align: right; }
+    .bar { height: 6px; border-radius: 3px; background: var(--raised); overflow: hidden; }
+    .bar i { display: block; height: 100%; width: var(--w); background: var(--text-2); border-radius: 3px; }
+    .radar li.top .bar i { background: var(--accent); }
+    .chart-head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s4); margin-bottom: var(--s3); font-size: 14px; color: var(--text-2); }
+    .chart { width: 100%; height: 240px; }
+    .chart .grid-l { stroke: var(--line); }
+    .chart .line { fill: none; stroke: var(--text-2); stroke-width: 2; }
+    .chart .peak { fill: var(--accent); }
+    .chart .cut { fill: color-mix(in oklch, var(--accent) 16%, transparent); stroke: var(--accent); stroke-dasharray: 4 4; }
+    .chart text { fill: var(--muted); font: 11px var(--font-mono); }
+    .chart-note { margin-top: var(--s3); font-size: 14px; color: var(--text-2); display: flex; gap: var(--s2); align-items: center; }
+    .clip { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: var(--s5); align-items: start; }
+    .clip-frame { position: relative; aspect-ratio: 9 / 16; border-radius: 16px; overflow: hidden; background: linear-gradient(#1a1e28, #11141c); border: 1px solid var(--line-2); }
+    .clip-frame .game { position: absolute; inset: 28% 0; background: repeating-linear-gradient(115deg, #232836 0 14px, #1d2230 14px 28px); }
+    .clip-frame .headline { position: absolute; left: 8%; right: 8%; top: 9%; font: 700 19px/1.05 var(--font-display); text-align: center; }
+    .clip-frame .caption { position: absolute; left: 8%; right: 8%; bottom: 22%; text-align: center; font: 700 15px/1.15 var(--font-ui); }
+    .clip-frame .caption mark { background: var(--accent); color: var(--on-accent); padding: 0 4px; border-radius: 3px; }
+    .clip-frame .credit { position: absolute; left: 8%; bottom: 8%; font: 500 10px/1 var(--font-mono); background: rgb(7 8 13 / .75); padding: 5px 7px; border-radius: 4px; color: var(--text-2); }
+    .kv { display: grid; gap: var(--s3); font-size: 14px; }
+    .kv div { display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: var(--s3); }
+    .kv dt { color: var(--muted); } .kv dd { margin: 0; color: var(--text); }
+    .review li { display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: var(--s4); align-items: center; min-height: 72px; border-bottom: 1px solid var(--line); }
+    .review .thumb { width: 54px; aspect-ratio: 9/16; border-radius: 6px; background: repeating-linear-gradient(115deg, #232836 0 8px, #1d2230 8px 16px); border: 1px solid var(--line-2); }
+    .review .t { font-size: 14px; } .review .t small { display: block; color: var(--muted); font-size: 12px; }
+    .tag { font-size: 12px; padding: 4px 8px; border-radius: var(--r-sm); border: 1px solid var(--line-2); color: var(--text-2); white-space: nowrap; }
+    .tag.go { color: var(--ok); border-color: color-mix(in oklch, var(--ok) 40%, transparent); }
+    .upload { margin-top: var(--s5); display: flex; align-items: center; gap: var(--s3); font-size: 14px; color: var(--text-2); }
+    .progress { flex: 1; height: 6px; border-radius: 3px; background: var(--raised); overflow: hidden; }
+    .progress i { display: block; height: 100%; width: 0; background: var(--ok); transition: width 1.6s var(--ease); }
+    .pane.on .progress i { width: 100%; }
+    .chapters { display: grid; }
+    .chapter { min-height: 72vh; display: grid; align-content: center; gap: var(--s3); padding-block: var(--s8); }
+    .chapter .k { display: flex; align-items: center; gap: var(--s3); color: var(--muted); font-size: 14px; }
+    .chapter h3 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 3vw, 42px); line-height: 1.02; letter-spacing: -0.01em; max-width: 14ch; }
+    .chapter p { color: var(--text-2); }
+    .chapter:not(.on) { color: var(--muted); }
+    .chapter:not(.on) h3 { color: var(--text-2); }
+    .chapter.on .lamp { background: var(--accent); }
+
+    /* Dentro */
+    .inside .cols { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: clamp(var(--s10), 6vw, var(--s24)); margin-top: var(--s12); }
+    .inside h3 { display: flex; align-items: center; gap: var(--s3); padding-bottom: var(--s4); border-bottom: 1px solid var(--line-2); }
+    .list li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: var(--s3); padding-block: var(--s3); border-bottom: 1px solid var(--line); color: var(--text-2); font-size: 16px; }
+    .list li b { color: var(--text); font-weight: 600; }
+    .list svg { width: 18px; height: 18px; margin-top: 4px; color: var(--muted); }
+
+    /* Preços (faixa clara) */
+    .prices { background: var(--paper); color: var(--ink); }
+    .prices ::selection { color: var(--ink); }
+    .prices .lead { color: var(--ink-2); }
+    .plans { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--s5); margin-top: var(--s12); }
+    .plan { background: var(--paper-card); border: 1px solid var(--ink-line); border-radius: var(--r-xl); padding: clamp(var(--s6), 3vw, var(--s10)); display: grid; align-content: start; gap: var(--s4); }
+    .plan.combo { background: var(--ink); color: var(--paper); border-color: var(--ink); grid-row: span 2; }
+    .plan .name { font-weight: 600; font-size: 18px; }
+    .plan .amount { font: 700 clamp(56px, 6vw, 88px)/0.9 var(--font-display); letter-spacing: -0.01em; }
+    .plan.single .amount { font-size: 56px; }
+    .plan .terms { font-size: 14px; color: var(--ink-2); }
+    .plan.combo .terms { color: #b6bccb; }
+    .plan ul { display: grid; gap: var(--s2); font-size: 15px; margin-top: var(--s2); }
+    .plan ul li { display: flex; gap: var(--s3); align-items: baseline; }
+    .plan ul li::before { content: ""; width: 8px; height: 8px; border-radius: 2px; background: currentColor; opacity: .35; flex: none; transform: translateY(-1px); }
+    .plan.combo ul li::before { background: var(--accent); opacity: 1; }
+    .plan .btn { justify-self: start; margin-top: var(--s4); }
+    .guarantee { margin-top: var(--s8); display: flex; flex-wrap: wrap; gap: var(--s3) var(--s8); font-size: 15px; color: var(--ink-2); }
+    .guarantee b { color: var(--ink); font-weight: 600; }
+
+    /* Requisitos */
+    .reqs .grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(var(--s10), 6vw, var(--s24)); align-items: start; }
+    .req li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s4); padding-block: var(--s4); border-bottom: 1px solid var(--line); }
+    .req li span:last-child { color: var(--text-2); text-align: right; }
+    .who-for { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s8); margin-top: var(--s16); }
+    .who-for h3 { margin-bottom: var(--s3); }
+    .who-for li { padding-block: var(--s2); color: var(--text-2); border-bottom: 1px solid var(--line); }
+
+    .req-two h3 { margin-top: var(--s6); }
+    .req-two h3:first-child { margin-top: 0; }
+    .gate { margin: var(--s10) 0 var(--s5); padding: clamp(var(--s6), 3vw, var(--s10)); background: var(--paper-card); color: var(--ink); border: 1px solid var(--ink-line); border-radius: var(--r-xl); display: grid; gap: var(--s4); }
+    .gate[hidden], .gate [hidden] { display: none; }
+    .gate-more, .gate-go { font-size: 15px; }
+    .gate a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+    .gate-lead { color: var(--ink-2); }
+    .gate fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); align-items: center; }
+    .gate legend { float: left; width: 100%; padding: 0; margin-bottom: var(--s2); font-weight: 500; }
+    .gate .opt { display: inline-flex; align-items: center; gap: var(--s2); min-height: 44px; padding: 0 var(--s4); border: 1px solid rgb(17 24 39 / .22); border-radius: var(--r-md); cursor: pointer; }
+    .gate .opt:has(input:checked) { border-color: var(--accent); background: #fff1ed; }
+    .gate .opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .gate input { accent-color: var(--accent); width: 18px; height: 18px; }
+    .gate-msg { padding: var(--s3) var(--s4); border-radius: var(--r-md); background: #eef0f5; color: var(--ink); border-left: 3px solid var(--ink-2); }
+    .gate.good .gate-msg { border-left-color: #1f8f5f; }
+    .gate.bad .gate-msg { border-left-color: #c8323a; }
+    .buy-note { font-size: 14px; color: #3b4452; }
+    .plan.combo .buy-note { color: #b6bccb; }
+    .btn[aria-disabled="true"] { background: #d5d9e1; color: #4b5565; border-color: transparent; cursor: not-allowed; }
+    .btn[aria-disabled="true"]:hover { background: #d5d9e1; }
+    .plan.combo .btn[aria-disabled="true"] { background: #2a2f3b; color: #a3a9b8; }
+    .plan.combo .btn[aria-disabled="true"]:hover { background: #2a2f3b; }
+
+    /* Perguntas */
+    .faq .wrap { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); gap: clamp(var(--s10), 6vw, var(--s24)); align-items: start; }
+    details { border-bottom: 1px solid var(--line); }
+    summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; gap: var(--s4); align-items: center; min-height: 64px; font-weight: 500; font-size: 18px; }
+    summary::-webkit-details-marker { display: none; }
+    summary::after { content: ""; width: 10px; height: 10px; border-right: 1.5px solid var(--muted); border-bottom: 1.5px solid var(--muted); transform: rotate(45deg) translateY(-3px); transition: transform var(--dur-base) var(--ease); flex: none; }
+    details[open] summary::after { transform: rotate(225deg); }
+    details p { color: var(--text-2); padding-bottom: var(--s5); }
+
+    /* Fechamento */
+    .close { text-align: left; }
+    .close .big { font-size: clamp(56px, 9vw, 144px); max-width: 12ch; }
+    .close .actions { display: flex; flex-wrap: wrap; gap: var(--s3); margin-top: var(--s10); }
+    footer { border-top: 1px solid var(--line); padding-block: var(--s10); color: var(--muted); font-size: 14px; }
+    footer .wrap { display: flex; flex-wrap: wrap; gap: var(--s4) var(--s8); justify-content: space-between; }
+    footer a { color: var(--text-2); }
+
+    /* barra de compra no celular */
+    .buybar { display: none; }
+
+    @keyframes enter { from { opacity: 0; transform: translateY(10px); } }
+    [data-enter] > * { animation: enter var(--dur-enter) var(--ease) both; animation-delay: calc(var(--i, 0) * var(--stagger)); }
+
+    @media (max-width: 1080px) {
+      .hero .wrap, .fab .grid, .cortes .grid, .inside .cols, .reqs .grid, .faq .wrap { grid-template-columns: minmax(0, 1fr); }
+      .monitor-wrap { position: sticky; top: 72px; z-index: 2; }
+      .chapter { min-height: 56vh; }
+      .plans { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+      .plan.combo { grid-column: 1 / -1; grid-row: auto; }
+    }
+    @media (max-width: 760px) {
+      .nav ul, .nav .btn-primary { display: none; }
+      .menu-btn { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--s3); background: none; border: 1px solid var(--line-2); border-radius: var(--r-md); color: var(--text); font: inherit; }
+      .nav.open { backdrop-filter: none; background: var(--bg); }
+      .nav.open ul { display: flex; flex-direction: column; position: fixed; top: 64px; left: 0; right: 0; height: calc(100svh - 64px); background: var(--bg); padding: var(--s8) var(--gutter); gap: var(--s5); }
+      .nav.open ul a { font-size: 24px; color: var(--text); }
+      body:has(.nav.open) { overflow: hidden; }
+      .hero .actions .btn, .close .actions .btn, .plan .btn { width: 100%; }
+      .console-body { grid-template-columns: minmax(0, 1fr) 128px; gap: var(--s3); padding: var(--s3); }
+      .st { font-size: 13px; padding: 0 var(--s2); gap: var(--s2); }
+      .st .who { display: none; }
+      .st.judge { margin-left: var(--s3); }
+      .phone { border-radius: 16px; }
+      .reels { grid-template-columns: 1fr 1fr; gap: var(--s3); }
+      .screen { min-height: 360px; }
+      .radar li { grid-template-columns: minmax(0, 1fr) 48px 64px; }
+      .clip { grid-template-columns: 120px minmax(0, 1fr); gap: var(--s4); }
+      .clip-frame .headline { font-size: 14px; } .clip-frame .caption { font-size: 11px; }
+      .plans, .who-for { grid-template-columns: minmax(0, 1fr); }
+      .monitor-wrap { top: 72px; }
+      .monitor-bar .mono { display: none; }
+      .screen { min-height: 272px; }
+      .pane { padding: var(--s4); }
+      .chart { height: 150px; }
+      .radar li { min-height: 44px; font-size: 13px; }
+      .review li { min-height: 60px; grid-template-columns: 34px minmax(0, 1fr) auto; gap: var(--s3); }
+      .review .thumb { width: 34px; }
+      .kv { font-size: 13px; } .kv div { grid-template-columns: 72px minmax(0, 1fr); } .kv div:nth-child(n+4) { display: none; }
+      .chapter { min-height: 62vh; align-content: end; padding-bottom: var(--s16); }
+      .st:has(.note) { min-height: 36px; }
+      .buybar { display: flex; position: fixed; z-index: 40; left: 0; right: 0; bottom: 0; padding: var(--s3) var(--gutter) calc(var(--s3) + env(safe-area-inset-bottom)); background: color-mix(in oklch, var(--bg) 92%, transparent); backdrop-filter: blur(10px); border-top: 1px solid var(--line); }
+      .buybar .btn { width: 100%; }
+      footer { padding-bottom: 96px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#conteudo">Pular para o conteúdo</a>
+
+  <header class="nav" id="nav">
+    <div class="wrap">
+      <a class="logo" href="#"><span class="lamp on" aria-hidden="true"></span>Fábrica IA</a>
+      <ul id="menu">
+        <li><a href="#fabrica">Fábrica de Vídeos</a></li>
+        <li><a href="#cortes">Máquina de Cortes</a></li>
+        <li><a href="#precos">Preços</a></li>
+        <li><a href="#perguntas">Perguntas</a></li>
+      </ul>
+      <a class="btn btn-primary" href="#precos">Ver preços</a>
+      <button class="menu-btn" aria-expanded="false" aria-controls="menu">Menu</button>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="hero">
+      <div class="wrap">
+        <div data-enter>
+          <h1 style="--i:0">Duas máquinas de IA que fazem vídeo no seu computador</h1>
+          <p class="sub" style="--i:1">A Fábrica de Vídeos faz o vídeo animado do zero a partir de uma frase. A Máquina de Cortes vigia lives e corta os melhores momentos. Você só assiste e aprova.</p>
+          <div class="actions" style="--i:2">
+            <a class="btn btn-primary" href="#precos">Ver preços e testar meu computador</a>
+            <a class="btn btn-secondary" href="#fabrica">Ver as máquinas trabalhando</a>
+          </div>
+          <p class="fact" style="--i:3"><span><b>R$77</b> as duas, pagamento único</span><span>Fábrica: Mac ou Windows · Máquina: Mac</span><span>Garantia de 7 dias</span></p>
+        </div>
+
+        <div class="console" aria-label="Demonstração do painel da Fábrica de Vídeos IA" data-enter>
+          <div class="console-bar">
+            <span class="title">Fábrica de Vídeos IA · painel</span>
+            <span class="mono" id="tc" aria-hidden="true">00:00:00:00</span>
+          </div>
+          <div class="console-body">
+            <div class="pauta"><span class="label">Ideia</span><span class="typed" id="typed" aria-live="polite">Caim e Abel: o primeiro B.O da história</span></div>
+            <ol class="stations" id="stations">
+              <li class="st" data-s><span class="lamp"></span><span>Pauta</span><span class="who">pauteiro</span></li>
+              <li class="st" data-s><span class="lamp"></span><span>Roteiro</span><span class="who">roteirista</span></li>
+              <li class="st judge" data-s><span class="lamp"></span><span>Conferência dos fatos</span><span class="who">conferente</span></li>
+              <li class="st" data-s><span class="lamp"></span><span>Narração</span><span class="who">narrador</span></li>
+              <li class="st" data-s><span class="lamp"></span><span>Cenas</span><span class="who">cenógrafo</span></li>
+              <li class="st" data-s><span class="lamp"></span><span>Montagem</span><span class="who">montador</span></li>
+              <li class="st judge" data-s data-flag><span class="lamp"></span><span>Crítica quadro a quadro</span><span class="who">crítico</span><span class="note">Reprovou: cena 6 ficou parada 4,2 s. Volta para a montagem.</span></li>
+              <li class="st" data-s><span class="lamp"></span><span>Capa e legendas</span><span class="who">capista</span></li>
+            </ol>
+            <div class="phone" id="phone">
+              <video id="heroVideo" src="media/caim-abel.mp4" poster="media/caim-abel.jpg" muted loop playsinline preload="metadata" aria-label="Vídeo feito pela Fábrica: Caim e Abel contado como boletim de ocorrência"></video>
+              <span class="tc mono"><span class="lamp ok"></span>Pronto</span>
+              <div class="veil" id="veil"><span>O vídeo aparece aqui quando a última estação terminar</span></div>
+              <div class="vctl">
+                <button class="icon-btn" id="heroSound" aria-label="Ligar o som"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="m23 9-6 6M17 9l6 6"/></svg></button>
+                <button class="icon-btn" id="heroPause" aria-label="Pausar o vídeo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></svg></button>
+              </div>
+            </div>
+            <div class="approve">
+              <span class="state" id="state"><span class="lamp on"></span><span id="stateTxt">Trabalhando</span></span>
+              <button class="btn btn-secondary" id="adjust" disabled>Pedir ajuste</button>
+              <button class="btn btn-primary" id="ok" disabled>Aprovar</button>
+              <button class="rerun" id="rerun" hidden>Rodar de novo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="fab" id="fabrica">
+      <div class="wrap">
+        <h2 class="h2">Fábrica de Vídeos IA: a ideia entra, o vídeo sai pronto</h2>
+        <p class="lead">Uma linha de produção com oito estações, cada uma com um agente de IA especialista. Ela roda no seu computador enquanto você faz outra coisa e para na sua frente só quando o vídeo está pronto para aprovar.</p>
+        <p class="price-tag"><b>R$47</b> sozinha, ou no combo com a Máquina de Cortes</p>
+
+        <div class="grid">
+          <div class="reels">
+            <figure>
+              <div class="phone"><video src="media/caim-abel.mp4" poster="media/caim-abel.jpg" muted loop playsinline preload="none" data-autoplay aria-label="Vídeo da Fábrica no formato B.O Bíblico"></video></div>
+              <figcaption>Formato B.O Bíblico · 89 s</figcaption>
+            </figure>
+            <figure>
+              <div class="phone"><video src="media/oracao.mp4" poster="media/oracao.jpg" muted loop playsinline preload="none" data-autoplay aria-label="Vídeo da Fábrica no formato Iceberg"></video></div>
+              <figcaption>Formato Iceberg · 40 s</figcaption>
+            </figure>
+          </div>
+          <div>
+            <ol class="steps">
+              <li><div><h3>Você escreve a ideia no painel</h3><p>Uma frase basta: o tema do vídeo e, se quiser, o que não pode faltar.</p></div></li>
+              <li><div><h3>A linha faz o resto, na ordem</h3><p>Roteiro, conferência dos fatos, voz em português, cenas, montagem com bonecos animados e efeitos sonoros, capa e legenda de cada rede.</p></div></li>
+              <li><div><h3>Você assiste e aprova</h3><p>Aprovou: sai o pacote com o vídeo, a capa, o título e as hashtags de Reels, TikTok e Shorts. Não gostou: escreve o ajuste e ela refaz da etapa certa.</p></div></li>
+            </ol>
+            <div class="judge-box">
+              <h3>Quem escreve nunca se confere</h3>
+              <p>O roteiro passa por um conferente que não escreveu nada. O vídeo passa por um crítico que não montou nada. Vídeo frenético, cena parada ou fato sem fonte volta antes de chegar em você.</p>
+              <ul class="judge-log mono">
+                <li><span class="lamp bad"></span>crítica · cena 6 parada 4,2 s · refazer</li>
+                <li><span class="lamp bad"></span>conferência · frase 9 sem fonte · refazer</li>
+                <li><span class="lamp ok"></span>crítica · aprovado · volume −14 LUFS</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="cortes" id="cortes">
+      <div class="wrap">
+        <h2 class="h2">Máquina de Cortes IA: vigia as lives e corta sozinha</h2>
+        <p class="lead">Ela procura streamers pequenos e médios, onde quase ninguém está cortando, e fica de olho nas lives deles. Quando o chat explode ou alguém grita, ela corta, põe legenda e o crédito do streamer.</p>
+        <p class="price-tag"><b>R$47</b> sozinha, ou no combo com a Fábrica</p>
+
+        <div class="grid">
+          <div class="monitor-wrap">
+            <div class="monitor" aria-label="Demonstração do painel da Máquina de Cortes IA">
+              <div class="monitor-bar">
+                <div class="tabs" id="tabs"><span class="on">Radar</span><span>Ao vivo</span><span>Corte</span><span>Revisar</span></div>
+                <span class="mono" style="color:var(--muted)">localhost:8787</span>
+              </div>
+              <div class="screen">
+                <div class="pane on" data-pane="0">
+                  <ul class="radar">
+                    <li class="top"><span class="who">Canal 1<small>GTA VI · 214 espectadores</small></span><span class="score">87</span><span class="bar"><i style="--w:87%"></i></span></li>
+                    <li class="top"><span class="who">Canal 2<small>GTA V RP · 96 espectadores</small></span><span class="score">81</span><span class="bar"><i style="--w:81%"></i></span></li>
+                    <li><span class="who">Canal 3<small>GTA VI · 412 espectadores</small></span><span class="score">74</span><span class="bar"><i style="--w:74%"></i></span></li>
+                    <li><span class="who">Canal 4<small>GTA V RP · 38 espectadores</small></span><span class="score">66</span><span class="bar"><i style="--w:66%"></i></span></li>
+                    <li><span class="who">Canal 5<small>GTA VI · 1.120 espectadores</small></span><span class="score">58</span><span class="bar"><i style="--w:58%"></i></span></li>
+                  </ul>
+                </div>
+                <div class="pane" data-pane="1">
+                  <div class="chart-head"><span>Canal 1 · mensagens a cada 10 s</span><span class="mono"><span class="lamp on" style="margin-right:6px"></span>ao vivo</span></div>
+                  <svg class="chart" viewBox="0 0 480 240" role="img" aria-label="Gráfico do chat com um pico marcado para corte">
+                    <line class="grid-l" x1="0" y1="200" x2="480" y2="200"/><line class="grid-l" x1="0" y1="130" x2="480" y2="130"/><line class="grid-l" x1="0" y1="60" x2="480" y2="60"/>
+                    <rect class="cut" x="286" y="20" width="72" height="180" rx="4"/>
+                    <polyline class="line" points="0,182 24,178 48,184 72,176 96,180 120,172 144,179 168,174 192,181 216,170 240,176 264,168 288,150 300,96 312,38 324,52 336,104 348,150 360,170 384,175 408,172 432,178 456,174 480,177"/>
+                    <circle class="peak" cx="312" cy="38" r="5"/>
+                    <text x="358" y="14" text-anchor="end">corte · 25 s antes, 15 s depois</text>
+                    <text x="0" y="226">−5 min</text><text x="440" y="226">agora</text>
+                  </svg>
+                  <p class="chart-note"><span class="lamp on"></span>Pico: 3,4 vezes a média dos últimos 5 minutos</p>
+                </div>
+                <div class="pane" data-pane="2">
+                  <div class="clip">
+                    <div class="clip-frame" aria-hidden="true">
+                      <span class="headline">Ele achou que ia dar certo</span>
+                      <span class="game"></span>
+                      <span class="caption">e aí o <mark>helicóptero</mark> caiu</span>
+                      <span class="credit">LIVE DE @CANAL1</span>
+                    </div>
+                    <dl class="kv">
+                      <div><dt>Formato</dt><dd>vertical 1080 × 1920</dd></div>
+                      <div><dt>Duração</dt><dd class="num">23 s, começando 5 s antes do grito</dd></div>
+                      <div><dt>Legenda</dt><dd>palavra por palavra, grande</dd></div>
+                      <div><dt>Título</dt><dd>a frase mais forte da fala</dd></div>
+                      <div><dt>Crédito</dt><dd>selo na tela e link do canal no post</dd></div>
+                    </dl>
+                  </div>
+                </div>
+                <div class="pane" data-pane="3">
+                  <ul class="review">
+                    <li><span class="thumb"></span><span class="t">Ele achou que ia dar certo<small>Canal 1 · ao vivo · 23 s</small></span><span class="tag go">posta</span></li>
+                    <li><span class="thumb"></span><span class="t">A polícia chegou na hora errada<small>Canal 2 · live de ontem · 31 s</small></span><span class="tag go">posta</span></li>
+                    <li><span class="thumb"></span><span class="t">Tiroteio na praia<small>Canal 3 · ao vivo · 19 s</small></span><span class="tag">talvez</span></li>
+                  </ul>
+                  <div class="upload"><span>Aprovado · subindo no YouTube Shorts</span><span class="progress"><i></i></span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chapters" id="chapters">
+            <div class="chapter on" data-step="0"><span class="k"><span class="lamp"></span>Radar</span><h3>Acha quem vale a pena cortar</h3><p>A cada 10 minutos ela lista as lives de GTA em português e dá uma nota para cada canal: chat vivo, audiência, constância, crescimento e quantos cortes já existem dele.</p></div>
+            <div class="chapter" data-step="1"><span class="k"><span class="lamp"></span>Ao vivo</span><h3>Vigia a live e espera o momento</h3><p>Ela lê o chat sem precisar de conta. Quando as mensagens disparam, marca o momento. Em canal pequeno, de chat fraco, quem decide é o volume do grito ou da risada.</p></div>
+            <div class="chapter" data-step="2"><span class="k"><span class="lamp"></span>Corte</span><h3>Corta, legenda e dá o crédito</h3><p>Vertical, legenda grande palavra por palavra, título-gancho em cima e o selo do streamer. Também corta as lives que já acabaram e os clipes que a comunidade fez.</p></div>
+            <div class="chapter" data-step="3"><span class="k"><span class="lamp"></span>Revisar</span><h3>Você aprova, ela posta</h3><p>Ela já separa o que vale postar, junta cortes repetidos do mesmo momento e, com a sua conta do Google conectada, sobe no YouTube Shorts depois que você aprova. O Google pode deixar os primeiros envios privados até revisar o seu app; se isso acontecer, você baixa o vídeo e posta pelo app. Nada sai sem você aprovar.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="inside" id="dentro">
+      <div class="wrap">
+        <h2 class="h2">O que vem em cada máquina</h2>
+        <div class="cols">
+          <div>
+            <h3><span class="lamp on"></span>Fábrica de Vídeos IA</h3>
+            <ul class="list">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>A linha de produção completa</b>: pauta, roteiro, conferência, narração, cenas, montagem, crítica, capa e legendas</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Painel no navegador</b> para pedir vídeo, assistir, aprovar e pedir ajuste</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>5 formatos prontos</b>: B.O Bíblico, Iceberg, Explica Qualquer Coisa, Ranking Top 5 e Você Sabia?</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Bonecos animados</b>, cenários prontos e efeitos sonoros próprios</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Voz em português</b> que roda no seu computador, sem chave nem mensalidade de voz</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Nome, marca e 30 pautas</b> criados para o seu canal na instalação</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3><span class="lamp on"></span>Máquina de Cortes IA</h3>
+            <ul class="list">
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Radar de streamers</b> pequenos e médios, com nota</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Vigia ao vivo</b>, lives que já acabaram e clipes da comunidade</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Corte vertical</b> com legenda grande, título e crédito</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Painel</b> com Radar, Revisar, Postar e Postados</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Envio ao YouTube Shorts</b> com a sua conta, depois que você aprova (o Google pode deixar os primeiros envios privados)</span></li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span><b>Liga com o Mac</b> e trabalha sozinha, sem gravar a live inteira no disco</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="prices" id="precos">
+      <div class="wrap">
+        <h2 class="h2">Preços</h2>
+        <p class="lead">Pagamento único, sem mensalidade. As atualizações vêm junto. Pode usar para fazer vídeo para clientes.</p>
+        <form class="gate" id="teste" hidden onsubmit="return false">
+          <h3>Teste seu computador em 30 segundos</h3>
+          <p class="gate-lead">Responda antes de comprar. O botão de compra só liga com tudo certo.</p>
+          <fieldset>
+            <legend>Qual é o seu computador?</legend>
+            <label class="opt" for="r1"><input type="radio" id="r1" name="so" value="mac"> Mac</label>
+            <label class="opt" for="r2"><input type="radio" id="r2" name="so" value="windows"> Windows</label>
+          </fieldset>
+          <div id="teste-mac" hidden>
+            <fieldset>
+              <legend>Menu Apple, Sobre este Mac: aparece "Chip" com "Apple M1" (ou M2, M3, M4…)?</legend>
+              <label class="opt" for="r3"><input type="radio" id="r3" name="mac1" value="sim"> Sim</label>
+              <label class="opt" for="r4"><input type="radio" id="r4" name="mac1" value="nao"> Não</label>
+            </fieldset>
+            <fieldset>
+              <legend>Na mesma tela, aparece "macOS 13" ou mais novo?</legend>
+              <label class="opt" for="r5"><input type="radio" id="r5" name="mac2" value="sim"> Sim</label>
+              <label class="opt" for="r6"><input type="radio" id="r6" name="mac2" value="nao"> Não</label>
+            </fieldset>
+            <fieldset>
+              <legend>Em "Memória" aparece 8 GB ou mais?</legend>
+              <label class="opt" for="r7"><input type="radio" id="r7" name="mac3" value="sim"> Sim</label>
+              <label class="opt" for="r8"><input type="radio" id="r8" name="mac3" value="nao"> Não</label>
+            </fieldset>
+          </div>
+          <div id="teste-windows" hidden>
+            <fieldset>
+              <legend>Configurações, Sistema, Sobre: "Tipo de sistema" diz "64 bits, processador baseado em x64"?</legend>
+              <label class="opt" for="r9"><input type="radio" id="r9" name="windows1" value="sim"> Sim</label>
+              <label class="opt" for="r10"><input type="radio" id="r10" name="windows1" value="nao"> Não</label>
+            </fieldset>
+            <fieldset>
+              <legend>"Especificações do Windows" diz Windows 10 ou 11?</legend>
+              <label class="opt" for="r11"><input type="radio" id="r11" name="windows2" value="sim"> Sim</label>
+              <label class="opt" for="r12"><input type="radio" id="r12" name="windows2" value="nao"> Não</label>
+            </fieldset>
+            <fieldset>
+              <legend>"RAM instalada" mostra 8 GB ou mais?</legend>
+              <label class="opt" for="r13"><input type="radio" id="r13" name="windows3" value="sim"> Sim</label>
+              <label class="opt" for="r14"><input type="radio" id="r14" name="windows3" value="nao"> Não</label>
+            </fieldset>
+          </div>
+          <fieldset>
+            <legend>Para os dois: você tem 10 GB livres no disco e o plano Claude Pro (US$ 20 por mês, pago à Anthropic, não vem junto)?</legend>
+            <label class="opt" for="r15"><input type="radio" id="r15" name="dois" value="sim"> Sim</label>
+            <label class="opt" for="r16"><input type="radio" id="r16" name="dois" value="nao"> Não</label>
+          </fieldset>
+          <div id="teste-mac-maquina" hidden>
+            <fieldset>
+              <legend>Para a Máquina de Cortes: aparece macOS 14 (Sonoma) ou mais novo, 16 GB de memória e você tem 20 GB livres?</legend>
+              <label class="opt" for="r17"><input type="radio" id="r17" name="mac4" value="sim"> Sim</label>
+              <label class="opt" for="r18"><input type="radio" id="r18" name="mac4" value="nao"> Não</label>
+            </fieldset>
+          </div>
+          <p class="gate-msg" id="teste-msg" role="status" aria-live="polite" tabindex="-1"><span id="teste-txt">Responda as perguntas para liberar a compra.</span> <a class="gate-go" id="teste-go" href="#cartoes" hidden>Ver os botões de compra ↓</a></p>
+          <p class="gate-more"><a href="#requisitos">Ver os requisitos completos</a></p>
+        </form>
+        <noscript><p class="gate-lead" style="color:var(--ink-2);margin-bottom:var(--s5)">Confira os requisitos completos mais abaixo antes de comprar. Se algum não bater, ainda não roda no seu computador.</p></noscript>
+        <div class="plans" id="cartoes">
+          <article class="plan combo">
+            <span class="name">As duas máquinas</span>
+            <span class="amount num">R$77</span>
+            <span class="terms">ou em até 12x no cartão · PIX na hora</span>
+            <ul>
+              <li>Fábrica de Vídeos IA completa</li>
+              <li>Máquina de Cortes IA completa</li>
+              <li>Vídeo de instalação de cada uma</li>
+              <li>Atualizações e suporte por WhatsApp</li>
+            </ul>
+            <a class="btn btn-primary" id="buy-combo" href="https://pay.kiwify.com.br/CkUHhEj">Comprar as duas por R$77</a>
+            <span class="buy-note" aria-live="polite"></span>
+          </article>
+          <article class="plan single">
+            <span class="name">Fábrica de Vídeos IA</span>
+            <span class="amount num">R$47</span>
+            <span class="terms">ou em até 12x · PIX na hora</span>
+            <a class="btn btn-ink" id="buy-fabrica" href="https://pay.kiwify.com.br/BV0kRB8">Comprar a Fábrica</a>
+            <span class="buy-note" aria-live="polite"></span>
+          </article>
+          <article class="plan single">
+            <span class="name">Máquina de Cortes IA</span>
+            <span class="amount num">R$47</span>
+            <span class="terms">ou em até 12x · PIX na hora</span>
+            <span class="terms">Só para Mac: chip Apple, macOS 14 ou mais novo, 16 GB de memória e 20 GB livres. Chave grátis da Twitch.</span>
+            <a class="btn btn-ink" id="buy-maquina" href="https://pay.kiwify.com.br/RE7MXng">Comprar a Máquina</a>
+            <span class="buy-note" aria-live="polite"></span>
+          </article>
+        </div>
+        <p class="guarantee"><span><b>Garantia de 7 dias</b>: não funcionou ou não gostou, o dinheiro volta.</span><span>Pagamento pela Kiwify</span></p>
+      </div>
+    </section>
+
+    <section class="reqs" id="requisitos">
+      <div class="wrap">
+        <div class="grid">
+          <div>
+            <h2 class="h2">O que você precisa ter</h2>
+            <p class="lead">As duas máquinas rodam no seu computador, não na nuvem. Por isso o seu vídeo e os seus cortes ficam com você. A Fábrica roda em Mac e em Windows; a Máquina de Cortes, só em Mac.</p>
+          </div>
+          <div class="req-two">
+            <h3>Fábrica de Vídeos IA</h3>
+            <ul class="req">
+              <li><span>Computador</span><span>Mac com chip Apple (M1 ou mais novo) ou Windows 10/11 de 64 bits</span></li>
+              <li><span>Sistema</span><span>macOS 13 ou mais novo, ou Windows 10 (1809 ou mais nova) ou 11</span></li>
+              <li><span>Memória</span><span class="num">8 GB (16 GB é melhor)</span></li>
+              <li><span>Espaço livre</span><span class="num">10 GB</span></li>
+              <li><span>Claude</span><span>plano Pro ou acima</span></li>
+              <li><span>Internet</span><span>durante a instalação e durante cada vídeo</span></li>
+              <li><span>Administrador</span><span>um computador seu, com a senha de administrador (a instalação pede)</span></li>
+              <li><span>Windows ARM (Snapdragon)</span><span>ainda não</span></li>
+            </ul>
+            <h3>Máquina de Cortes IA</h3>
+            <ul class="req">
+              <li><span>Computador</span><span>só Mac, com chip Apple (M1 ou mais novo)</span></li>
+              <li><span>Sistema</span><span>macOS 14 (Sonoma) ou mais novo</span></li>
+              <li><span>Memória</span><span class="num">16 GB</span></li>
+              <li><span>Espaço livre</span><span class="num">20 GB</span></li>
+              <li><span>Claude</span><span>plano Pro ou acima</span></li>
+              <li><span>Twitch</span><span>chave grátis (a instalação ensina)</span></li>
+            </ul>
+          </div>
+        </div>
+        <div class="who-for">
+          <div>
+            <h3>É para você se</h3>
+            <ul>
+              <li>Quer postar todo dia sem editar nada</li>
+              <li>Quer um canal sem aparecer e sem gravar a voz</li>
+              <li>Sabe abrir o app do Claude e colar um comando</li>
+              <li>Quer fazer cortes de lives para crescer um canal</li>
+            </ul>
+          </div>
+          <div>
+            <h3>Não é para você se</h3>
+            <ul>
+              <li>Só tem celular, Mac Intel ou Windows ARM</li>
+              <li>Quer resultado sem postar com constância</li>
+              <li>Quer editar quadro a quadro na mão</li>
+              <li>Quer cortar streamer sem dar crédito</li>
+              <li>Quer a Máquina de Cortes mas não tem Mac: ela é só para Mac</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="faq" id="perguntas">
+      <div class="wrap">
+        <h2 class="h2">Perguntas</h2>
+        <div>
+          <details><summary>Como eu instalo?</summary><p>Depois da compra chega o acesso por e-mail. Você baixa o arquivo .zip, envia no app do Claude (Personalizar, Plugins, Adicionar, Enviar plugin), abre a aba Code e digita /fabrica:instalar (ou /cortes:instalar na Máquina). Ela instala o que falta, confere cada peça, faz um vídeo ou um corte de teste e abre o painel. Se algo der errado, ela diz em português o que fazer.</p></details>
+          <details><summary>Preciso saber programar?</summary><p>Não. Você precisa saber abrir o app do Claude e colar um comando. O resto é no painel, com botões.</p></details>
+          <details><summary>Ela posta sozinha?</summary><p>A Fábrica nunca posta: ela entrega o vídeo, a capa e o texto de cada rede para você subir. A Máquina de Cortes sobe no YouTube Shorts só depois que você aprova, e só se você conectar a sua conta do Google. O Google pode deixar os primeiros envios privados até revisar o seu app; nesse caso, use o botão Baixar e poste pelo app.</p></details>
+          <details><summary>Tenho que pagar mais alguma coisa?</summary><p>Você precisa do Claude no plano Pro ou acima (US$ 20 por mês), que é da Anthropic e é pago à parte. A voz, as cenas e os cortes rodam no seu computador, sem outra assinatura.</p></details>
+          <details><summary>Vou ganhar dinheiro com isso?</summary><p>As máquinas fazem o trabalho pesado. O resultado depende do que você posta, de quantas vezes posta e das regras de cada plataforma. Ninguém pode prometer views nem renda.</p></details>
+          <details><summary>Posso cortar qualquer streamer?</summary><p>Corte só de quem permite e sempre com crédito. A Máquina já coloca o selo do canal no vídeo e o link no texto do post.</p></details>
+          <details><summary>E se não funcionar no meu computador?</summary><p>Fale no suporte. Se não resolver, a garantia de 7 dias devolve o seu dinheiro.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <section class="close">
+      <div class="wrap">
+        <h2 class="big">As duas máquinas por R$77</h2>
+        <p class="lead">Pagamento único, garantia de 7 dias e acesso na hora.</p>
+        <div class="actions">
+          <a class="btn btn-primary" href="#precos">Ver preços e testar meu computador</a>
+          <a class="btn btn-secondary" href="#precos">Ver os preços separados</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="buybar"><a class="btn btn-primary" href="#precos">Ver preços</a></div>
+
+  <footer>
+    <div class="wrap">
+      <span>© 2026 Fábrica IA · <a href="https://instagram.com/eusoumatheuss" rel="noopener">@eusoumatheuss</a></span>
+      <span><a href="#termos" data-assumed="página de termos">Termos</a> · <a href="#privacidade" data-assumed="página de privacidade">Privacidade</a></span>
+    </div>
+  </footer>
+
+  <script src="portao.js"></script>
+  <script>
+    // menu mobile
+    const nav = document.getElementById('nav'), menuBtn = nav.querySelector('.menu-btn');
+    menuBtn.addEventListener('click', () => { const o = nav.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); menuBtn.textContent = o ? 'Fechar' : 'Menu'; });
+    nav.querySelectorAll('#menu a').forEach(a => a.addEventListener('click', () => { nav.classList.remove('open'); menuBtn.setAttribute('aria-expanded', false); menuBtn.textContent = 'Menu'; }));
+
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const sleep = ms => new Promise(r => setTimeout(r, reduce ? 0 : ms));
+
+    // momento 1: a pauta passa pelas estações
+    const sts = [...document.querySelectorAll('[data-s]')];
+    const phone = document.getElementById('phone'), video = document.getElementById('heroVideo');
+    const stateTxt = document.getElementById('stateTxt'), stateLamp = document.querySelector('#state .lamp');
+    const okBtn = document.getElementById('ok'), adjBtn = document.getElementById('adjust'), rerun = document.getElementById('rerun');
+    const typed = document.getElementById('typed'), FULL = typed.textContent, tcEl = document.getElementById('tc');
+    let t0 = 0, tcTimer = 0;
+    const tick = () => { const s = (performance.now() - t0) / 1000, f = Math.floor((s % 1) * 30);
+      tcEl.textContent = [0, Math.floor(s / 60), Math.floor(s % 60), f].map(n => String(n).padStart(2, '0')).join(':'); };
+    function setLamp(el, cls) { const l = el.querySelector('.lamp'); l.className = 'lamp' + (cls ? ' ' + cls : ''); }
+
+    async function run() {
+      rerun.hidden = true; okBtn.disabled = adjBtn.disabled = true; okBtn.textContent = 'Aprovar';
+      phone.classList.remove('ready'); video.pause(); video.currentTime = 0;
+      sts.forEach(s => { s.className = s.className.replace(/\b(run|done|flag)\b/g, '').trim(); setLamp(s); });
+      stateTxt.textContent = 'Trabalhando'; stateLamp.className = 'lamp on';
+      t0 = performance.now(); clearInterval(tcTimer); tcTimer = setInterval(tick, 1000 / 30);
+      if (!reduce) { typed.textContent = ''; for (const ch of FULL) { typed.textContent += ch; await sleep(28); } }
+      for (let i = 0; i < sts.length; i++) {
+        const s = sts[i]; s.classList.add('run'); setLamp(s, 'on'); await sleep(520);
+        if (s.hasAttribute('data-flag')) {
+          s.classList.add('flag'); setLamp(s, 'bad'); await sleep(1500);
+          const mont = sts[i - 1]; mont.classList.remove('done'); mont.classList.add('run'); setLamp(mont, 'on'); await sleep(700);
+          mont.classList.remove('run'); mont.classList.add('done'); setLamp(mont, 'ok');
+          s.classList.remove('flag'); setLamp(s, 'on'); await sleep(520);
+        }
+        s.classList.remove('run'); s.classList.add('done'); setLamp(s, 'ok');
+      }
+      clearInterval(tcTimer);
+      phone.classList.add('ready'); video.play().catch(() => {});
+      stateTxt.textContent = 'Esperando você'; stateLamp.className = 'lamp ok';
+      okBtn.disabled = adjBtn.disabled = false; rerun.hidden = false;
+    }
+    okBtn.addEventListener('click', () => { stateTxt.textContent = 'Aprovado · pacote pronto para Reels, TikTok e Shorts'; okBtn.disabled = adjBtn.disabled = true; });
+    adjBtn.addEventListener('click', () => { stateTxt.textContent = 'Ajuste anotado · a fábrica refaz da etapa certa'; okBtn.disabled = adjBtn.disabled = true; });
+    rerun.addEventListener('click', run);
+    const pauseBtn = document.getElementById('heroPause'), soundBtn = document.getElementById('heroSound');
+    pauseBtn.addEventListener('click', () => { if (video.paused) { video.play(); pauseBtn.setAttribute('aria-label', 'Pausar o vídeo'); } else { video.pause(); pauseBtn.setAttribute('aria-label', 'Continuar o vídeo'); } });
+    soundBtn.addEventListener('click', () => { video.muted = !video.muted; soundBtn.setAttribute('aria-label', video.muted ? 'Ligar o som' : 'Desligar o som'); });
+    new IntersectionObserver((es, o) => { if (es[0].isIntersecting) { o.disconnect(); run(); } }, { threshold: .4 }).observe(document.querySelector('.console'));
+
+    // vídeos da seção da Fábrica tocam só quando aparecem
+    const vio = new IntersectionObserver(es => es.forEach(e => { const v = e.target; if (e.isIntersecting && !reduce) v.play().catch(() => {}); else v.pause(); }), { threshold: .5 });
+    document.querySelectorAll('video[data-autoplay]').forEach(v => vio.observe(v));
+
+    // momento 2: o monitor acompanha os capítulos
+    const chapters = [...document.querySelectorAll('.chapter')], panes = [...document.querySelectorAll('.pane')], tabs = [...document.querySelectorAll('#tabs span')];
+    const show = n => { chapters.forEach((c, i) => c.classList.toggle('on', i === n)); panes.forEach((p, i) => p.classList.toggle('on', i === n)); tabs.forEach((t, i) => t.classList.toggle('on', i === n)); };
+    const cio = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) show(+e.target.dataset.step); }), { rootMargin: '-45% 0px -45% 0px' });
+    chapters.forEach(c => cio.observe(c));
+  </script>
+</body>
+</html>
